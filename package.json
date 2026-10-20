@@ -1,13 +1,16 @@
 {
   "name": "ultimate-lao-ai",
-  "version": "2.0.0",
-  "description": "The Highest Level of Lottery Prediction Engine",
+  "version": "3.0.0",
+  "description": "Lao Lottery AI with Persistent Real-Data Memory",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
     "node-cron": "^3.0.3"
   }
 }

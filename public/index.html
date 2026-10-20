@@ -1,119 +1,38 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTIMATE AI - QUANTUM ANALYSIS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Kanit', sans-serif; background: #020617; color: #f8fafc; }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-        .quantum-card { 
-            border: 2px solid #3b82f6; 
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); 
-            background: rgba(15, 23, 42, 0.95);
-        }
-        .glow-text { text-shadow: 0 0 20px #60a5fa; }
-        .date-badge { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
-
-    <div class="max-w-5xl w-full text-center">
-        <h1 class="orbitron text-4xl md:text-6xl font-bold mb-2 glow-text text-blue-400">QUANTUM AI</h1>
-        <p class="text-slate-400 mb-12 tracking-widest uppercase text-sm">Highest Level of Statistical Convergence</p>
-
-        <!-- Input Area -->
-        <div class="mb-12 flex flex-col items-center gap-4">
-            <div class="flex gap-3">
-                <input id="resultInput" type="text" placeholder="ใส่ผลหวยวันนี้ (2 ตัว)" class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white focus:outline-none focus:border-blue-500 w-56 text-center text-2xl orbitron">
-                <button onclick="updateResult()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-xl font-bold transition-all active:scale-95 text-lg">วิเคราะห์งวดถัดไป</button>
-            </div>
-            <p class="text-slate-500 text-xs">ป้อนผลรางวัลล่าสุดเพื่อเริ่มระบบ Bayesian Inference</p>
-        </div>
-
-        <!-- Main Analytics Board -->
-        <div class="quantum-card p-8 md:p-12 rounded-3xl text-left relative">
-            
-            <!-- Date Timeline Section -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                <div class="date-badge p-6 rounded-2xl text-center">
-                    <p class="text-blue-400 text-xs uppercase orbitron mb-2">งวดที่ออกวันนี้</p>
-                    <p id="inputDate" class="text-xl font-semibold text-white">--</p>
-                    <p id="inputResultDisplay" class="text-sm text-slate-400 mt-1">ผลรางวัล: --</p>
-                </div>
-                <div class="date-badge p-6 rounded-2xl text-center border-green-500/30 bg-green-500/10">
-                    <p class="text-green-400 text-xs uppercase orbitron mb-2">งวดที่คำนวณวันถัดไป</p>
-                    <p id="predDate" class="text-xl font-semibold text-white">--</p>
-                    <p class="text-sm text-slate-400 mt-1">เป้าหมายการทำนาย</p>
-                </div>
-            </div>
-
-            <div class="flex flex-col md:flex-row items-center justify-around gap-12">
-                <!-- Result Display -->
-                <div class="text-center">
-                    <p class="text-slate-400 text-sm uppercase mb-2 orbitron">เลขที่มีโอกาสสูงสุด</p>
-                    <div id="mainNum" class="orbitron text-9xl font-bold text-white glow-text">--</div>
-                    <div id="mainProb" class="text-3xl font-bold text-blue-400 mt-4">0%</div>
-                </div>
-
-                <!-- Deep Analysis -->
-                <div class="max-w-md space-y-6">
-                    <div class="bg-black/60 p-5 rounded-2xl border border-slate-800">
-                        <p class="text-blue-400 text-xs font-bold uppercase mb-2 orbitron">Algorithm used:</p>
-                        <p id="method" class="text-slate-300 text-sm leading-relaxed">--</p>
-                    </div>
-                    <div class="bg-black/60 p-5 rounded-2xl border border-slate-800">
-                        <p class="text-blue-400 text-xs font-bold uppercase mb-2 orbitron">AI Precision Report:</p>
-                        <p id="mainReason" class="text-slate-300 text-sm leading-relaxed">รอการป้อนข้อมูลเพื่อคำนวณความน่าจะเป็น...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-10 text-slate-500 text-xs orbitron flex justify-center gap-4">
-            <span>STATUS: <span class="text-green-500">ACTIVE</span></span>
-            <span>|</span>
-            <span>UPDATED: <span id="lastUpdate" class="text-slate-300">--</span></span>
-        </div>
+<!-- หาตำแหน่งใน index.html ตรงส่วน Timeline และเพิ่มส่วนนี้เข้าไป -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <!-- ส่วนเดิม -->
+    <div class="date-badge p-6 rounded-2xl text-center">
+        <p class="text-blue-400 text-xs uppercase orbitron mb-2">งวดที่ออกวันนี้</p>
+        <p id="inputDate" class="text-lg font-semibold text-white">--</p>
+        <p id="inputResultDisplay" class="text-sm text-slate-400 mt-1">ผลรางวัล: --</p>
     </div>
+    <div class="date-badge p-6 rounded-2xl text-center border-green-500/30 bg-green-500/10">
+        <p class="text-green-400 text-xs uppercase orbitron mb-2">งวดที่คำนวณวันถัดไป</p>
+        <p id="predDate" class="text-lg font-semibold text-white">--</p>
+        <p class="text-sm text-slate-400 mt-1">เป้าหมายการทำนาย</p>
+    </div>
+    <!-- ส่วนที่เพิ่มใหม่: แสดงจำนวนข้อมูลจริง -->
+    <div class="date-badge p-6 rounded-2xl text-center border-yellow-500/30 bg-yellow-500/10">
+        <p class="text-yellow-400 text-xs uppercase orbitron mb-2">ฐานข้อมูลสถิติจริง</p>
+        <p id="datasetSize" class="text-lg font-semibold text-white">--</p>
+        <p class="text-sm text-slate-400 mt-1">งวดที่ถูกวิเคราะห์</p>
+    </div>
+</div>
 
-    <script>
-        async function sync() {
-            const res = await fetch('/api/prediction');
-            const data = await res.json();
-            document.getElementById('inputDate').innerText = data.inputDate;
-            document.getElementById('inputResultDisplay').innerText = `ผลรางวัล: ${data.inputResult}`;
-            document.getElementById('predDate').innerText = data.predictionDate;
-            document.getElementById('mainNum').innerText = data.number;
-            document.getElementById('mainProb').innerText = `ความน่าจะเป็น: ${data.probability}`;
-            document.getElementById('method').innerText = data.methodology;
-            document.getElementById('mainReason').innerText = data.analysis;
-            document.getElementById('lastUpdate').innerText = data.lastUpdate;
-        }
-
-        async function updateResult() {
-            const result = document.getElementById('resultInput').value;
-            if(!result) return alert("กรุณาใส่ผลหวย");
-            
-            const btn = document.querySelector('button');
-            btn.innerText = "กำลังวิเคราะห์...";
-            btn.disabled = true;
-
-            await fetch('/api/update-result', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ result })
-            });
-
-            btn.innerText = "วิเคราะห์งวดถัดไป";
-            btn.disabled = false;
-            sync();
-        }
-
-        setInterval(sync, 5000);
-        sync();
-    </script>
-</body>
-</html>
+<!-- ในส่วน <script> แก้ไขฟังก์ชัน sync() -->
+<script>
+    async function sync() {
+        const res = await fetch('/api/prediction');
+        const data = await res.json();
+        document.getElementById('inputDate').innerText = data.inputDate;
+        document.getElementById('inputResultDisplay').innerText = `ผลรางวัล: ${data.inputResult}`;
+        document.getElementById('predDate').innerText = data.predictionDate;
+        document.getElementById('datasetSize').innerText = `${data.datasetSize} งวด`; // เพิ่มบรรทัดนี้
+        document.getElementById('mainNum').innerText = data.number;
+        document.getElementById('mainProb').innerText = `ความน่าจะเป็น: ${data.probability}`;
+        document.getElementById('method').innerText = data.methodology;
+        document.getElementById('mainReason').innerText = data.analysis;
+        document.getElementById('lastUpdate').innerText = data.lastUpdate;
+    }
+    // ... ส่วนที่เหลือเหมือนเดิม ...
+</script>
