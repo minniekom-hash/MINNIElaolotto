@@ -14,22 +14,22 @@ const HISTORY_FILE = path.join(__dirname, 'history.json');
 
 let masterPrediction = {
     inputDate: "--",
-    inputResult: "--",
+    inputTop: "--",     // ผลบนวันนี้
+    inputBottom: "--",  // ผลล่างวันนี้
     predictionDate: "--",
-    number: "--",
-    probability: "0%",
-    analysis: "ระบบกำลังประมวลผลฐานข้อมูลสถิติจริง...",
-    methodology: "Bayesian Inference + Historical Cycle Convergence",
+    top: { number: "--", probability: "0%", analysis: "รอข้อมูล..." },
+    bottom: { number: "--", probability: "0%", analysis: "รอข้อมูล..." },
+    methodology: "Dual-Stream Bayesian Convergence",
     lastUpdate: "--",
-    datasetSize: 0
+    datasetSize: { top: 0, bottom: 0 }
 };
 
-// --- [ MEMORY SYSTEM: จัดการข้อมูลย้อนหลัง ] ---
+// --- [ MEMORY SYSTEM: แยกเก็บ บน-ล่าง ] ---
 function loadHistory() {
     if (fs.existsSync(HISTORY_FILE)) {
         return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
     }
-    return []; // ถ้าไม่มีไฟล์ ให้เริ่มจากอาเรย์ว่าง
+    return { top: [], bottom: [] }; // แยกอาเรย์ บน และ ล่าง
 }
 
 function saveHistory(history) {
@@ -49,41 +49,10 @@ function getNextDrawDate() {
     }
 }
 
-// --- [ SCRAPER: ดึงข้อมูลจริงจากเว็บ ] ---
-async function scrapeLaoLottery() {
-    console.log("🔍 Scraping real data...");
-    try {
-        // ใช้แหล่งข้อมูลที่ให้ตารางย้อนหลัง (จำลอง Selector สำหรับ Sanook/MThai)
-        const url = 'https://www.sanook.com/lottery/lao/'; 
-        const { data } = await axios.get(url);
-        const $ = cheerio.load(data);
-        
-        // พยายามดึงเลข 2 ตัวท้ายของงวดล่าสุด
-        let result = $('.lottery-result-number').first().text().trim(); 
-        if (!result) return null;
-        
-        return result.substring(0, 2);
-    } catch (e) {
-        return null;
-    }
-}
-
-// --- [ ULTIMATE ANALYSIS: วิเคราะห์จากสถิติจริง ] ---
-async function calculateUltimateNumber(lastResult) {
-    let history = loadHistory();
-    
-    // เพิ่มผลล่าสุดลงในประวัติ (ถ้ายังไม่มี)
-    if (history[0] !== lastResult) {
-        history.unshift(lastResult);
-        saveHistory(history);
-    }
-
-    if (history.length < 5) {
-        return {
-            number: "??",
-            probability: "Low",
-            analysis: "ฐานข้อมูลยังไม่เพียงพอ (ต้องการอย่างน้อย 5 งวด) ระบบกำลังสะสมสถิติจริง..."
-        };
+// --- [ CORE ANALYSIS ENGINE: ฟังก์ชันคำนวณกลาง ] ---
+async function calculateBestNumber(historyList, lastResult) {
+    if (historyList.length < 3) {
+        return { number: "??", probability: "Low", analysis: "ข้อมูลไม่เพียงพอ" };
     }
 
     let bestScore = -1;
@@ -93,20 +62,18 @@ async function calculateUltimateNumber(lastResult) {
         let num = i.toString().padStart(2, '0');
         let score = 0;
 
-        // 1. Bayesian Correlation: วิเคราะห์ว่าถ้าออก lastResult งวดหน้าออก num บ่อยแค่ไหน
-        for (let j = 0; j < history.length - 1; j++) {
-            if (history[j+1] === lastResult && history[j] === num) {
-                score += 30;
-            }
+        // 1. Bayesian Correlation
+        for (let j = 0; j < historyList.length - 1; j++) {
+            if (historyList[j+1] === lastResult && historyList[j] === num) score += 30;
         }
 
-        // 2. Real Cycle Deviation: หาจุด Peak จากข้อมูลจริง
-        const lastIndex = history.lastIndexOf(num);
-        const gap = lastIndex === -1 ? history.length : 0; // ถ้าไม่เคยออกเลย ให้ใช้ความยาว history เป็น gap
-        if (gap > 10 && gap < 25) score += 50;
+        // 2. Cycle Deviation (Gap)
+        const lastIndex = historyList.lastIndexOf(num);
+        const gap = lastIndex === -1 ? historyList.length : (historyList.length - 1) - lastIndex;
+        if (gap > 8 && gap < 20) score += 50;
 
-        // 3. Historical Frequency: ความถี่จริงใน 6 เดือน/งวดที่ผ่านมา
-        const freq = history.filter(n => n === num).length;
+        // 3. Frequency
+        const freq = historyList.filter(n => n === num).length;
         score += (freq * 15);
 
         if (score > bestScore) {
@@ -114,52 +81,39 @@ async function calculateUltimateNumber(lastResult) {
             winner = num;
         }
     }
-
     const prob = Math.min(99.8, (bestScore / 150 * 100 + 60).toFixed(2));
-    
-    return {
-        number: winner,
-        probability: `${prob}%`,
-        analysis: `วิเคราะห์จากฐานข้อมูลจริง ${history.length} งวด พบว่าเลข ${winner} มีค่าการบรรจบของสัญญาณ (Convergence) สูงสุด โดยอิงจากรอบการออก (Cycle) ย้อนหลังและแรงเหวี่ยงจากเลข ${lastResult}`
-    };
+    return { number: winner, probability: `${prob}%`, analysis: `วิเคราะห์จากรอบ Cycle ของเลข ${winner} ที่สัมพันธ์กับ ${lastResult}` };
 }
 
-async function runFullUpdate() {
-    const result = await scrapeLaoLottery();
-    if (result) {
-        const prediction = await calculateUltimateNumber(result);
-        masterPrediction = { 
-            inputDate: formatThaiDate(new Date()),
-            inputResult: result,
-            predictionDate: getNextDrawDate(),
-            ...prediction, 
-            datasetSize: loadHistory().length,
-            lastUpdate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) 
-        };
-    }
-}
-
-// รันทุกวัน จันทร์-ศุกร์ 20:40 น.
-cron.schedule('40 20 * * 1-5', runFullUpdate, { timezone: "Asia/Bangkok" });
-
+// --- [ API & LOGIC ] ---
 app.post('/api/update-result', async (req, res) => {
-    const { result } = req.body;
-    if (!result) return res.status(400).send("Missing result");
-    const prediction = await calculateUltimateNumber(result);
-    masterPrediction = { 
+    const { top, bottom } = req.body;
+    if (!top || !bottom) return res.status(400).send("กรุณาใส่ทั้งบนและล่าง");
+
+    let history = loadHistory();
+    
+    // บันทึกผลลงประวัติ
+    if (history.top[0] !== top) history.top.unshift(top);
+    if (history.bottom[0] !== bottom) history.bottom.unshift(bottom);
+    saveHistory(history);
+
+    const predTop = await calculateBestNumber(history.top, top);
+    const predBottom = await calculateBestNumber(history.bottom, bottom);
+
+    masterPrediction = {
         inputDate: formatThaiDate(new Date()),
-        inputResult: result,
+        inputTop: top,
+        inputBottom: bottom,
         predictionDate: getNextDrawDate(),
-        ...prediction, 
-        datasetSize: loadHistory().length,
-        lastUpdate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) 
+        top: predTop,
+        bottom: predBottom,
+        datasetSize: { top: history.top.length, bottom: history.bottom.length },
+        lastUpdate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })
     };
+
     res.json({ success: true, data: masterPrediction });
 });
 
 app.get('/api/prediction', (req, res) => res.json(masterPrediction));
 
-app.listen(PORT, () => {
-    console.log(`Quantum AI Server running on port ${PORT}`);
-    runFullUpdate();
-});
+app.listen(PORT, () => console.log(`Dual-Stream AI Server running on port ${PORT}`));

@@ -1,38 +1,130 @@
-<!-- หาตำแหน่งใน index.html ตรงส่วน Timeline และเพิ่มส่วนนี้เข้าไป -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-    <!-- ส่วนเดิม -->
-    <div class="date-badge p-6 rounded-2xl text-center">
-        <p class="text-blue-400 text-xs uppercase orbitron mb-2">งวดที่ออกวันนี้</p>
-        <p id="inputDate" class="text-lg font-semibold text-white">--</p>
-        <p id="inputResultDisplay" class="text-sm text-slate-400 mt-1">ผลรางวัล: --</p>
-    </div>
-    <div class="date-badge p-6 rounded-2xl text-center border-green-500/30 bg-green-500/10">
-        <p class="text-green-400 text-xs uppercase orbitron mb-2">งวดที่คำนวณวันถัดไป</p>
-        <p id="predDate" class="text-lg font-semibold text-white">--</p>
-        <p class="text-sm text-slate-400 mt-1">เป้าหมายการทำนาย</p>
-    </div>
-    <!-- ส่วนที่เพิ่มใหม่: แสดงจำนวนข้อมูลจริง -->
-    <div class="date-badge p-6 rounded-2xl text-center border-yellow-500/30 bg-yellow-500/10">
-        <p class="text-yellow-400 text-xs uppercase orbitron mb-2">ฐานข้อมูลสถิติจริง</p>
-        <p id="datasetSize" class="text-lg font-semibold text-white">--</p>
-        <p class="text-sm text-slate-400 mt-1">งวดที่ถูกวิเคราะห์</p>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTIMATE AI - DUAL PREDICTION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; background: #020617; color: #f8fafc; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .quantum-card { 
+            border: 2px solid #3b82f6; 
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); 
+            background: rgba(15, 23, 42, 0.95);
+        }
+        .glow-text { text-shadow: 0 0 20px #60a5fa; }
+        .date-badge { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-<!-- ในส่วน <script> แก้ไขฟังก์ชัน sync() -->
-<script>
-    async function sync() {
-        const res = await fetch('/api/prediction');
-        const data = await res.json();
-        document.getElementById('inputDate').innerText = data.inputDate;
-        document.getElementById('inputResultDisplay').innerText = `ผลรางวัล: ${data.inputResult}`;
-        document.getElementById('predDate').innerText = data.predictionDate;
-        document.getElementById('datasetSize').innerText = `${data.datasetSize} งวด`; // เพิ่มบรรทัดนี้
-        document.getElementById('mainNum').innerText = data.number;
-        document.getElementById('mainProb').innerText = `ความน่าจะเป็น: ${data.probability}`;
-        document.getElementById('method').innerText = data.methodology;
-        document.getElementById('mainReason').innerText = data.analysis;
-        document.getElementById('lastUpdate').innerText = data.lastUpdate;
-    }
-    // ... ส่วนที่เหลือเหมือนเดิม ...
-</script>
+    <div class="max-w-6xl w-full text-center">
+        <h1 class="orbitron text-4xl md:text-6xl font-bold mb-2 glow-text text-blue-400">QUANTUM AI</h1>
+        <p class="text-slate-400 mb-12 tracking-widest uppercase text-sm">Dual-Stream Bayesian Convergence Engine</p>
+
+        <!-- Input Area -->
+        <div class="mb-12 flex flex-col items-center gap-6">
+            <div class="flex flex-wrap justify-center gap-4">
+                <div class="flex flex-col items-center">
+                    <label class="text-slate-500 text-xs mb-2">ผลบนวันนี้</label>
+                    <input id="topInput" type="text" placeholder="XX" class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white text-center text-2xl orbitron w-32">
+                </div>
+                <div class="flex flex-col items-center">
+                    <label class="text-slate-500 text-xs mb-2">ผลล่างวันนี้</label>
+                    <input id="bottomInput" type="text" placeholder="XX" class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white text-center text-2xl orbitron w-32">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="updateResult()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-xl font-bold transition-all active:scale-95 text-lg h-[60px]">วิเคราะห์งวดถัดไป</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Analytics Board -->
+        <div class="quantum-card p-8 md:p-12 rounded-3xl text-left relative">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="date-badge p-6 rounded-2xl text-center">
+                    <p class="text-blue-400 text-xs uppercase orbitron mb-2">งวดที่ออกวันนี้</p>
+                    <p id="inputDate" class="text-lg font-semibold text-white">--</p>
+                    <p id="inputRes" class="text-sm text-slate-400 mt-1">บน: -- | ล่าง: --</p>
+                </div>
+                <div class="date-badge p-6 rounded-2xl text-center border-green-500/30 bg-green-500/10">
+                    <p class="text-green-400 text-xs uppercase orbitron mb-2">งวดที่คำนวณวันถัดไป</p>
+                    <p id="predDate" class="text-lg font-semibold text-white">--</p>
+                    <p class="text-sm text-slate-400 mt-1">เป้าหมายการทำนาย</p>
+                </div>
+                <div class="date-badge p-6 rounded-2xl text-center border-yellow-500/30 bg-yellow-500/10">
+                    <p class="text-yellow-400 text-xs uppercase orbitron mb-2">Dataset Size</p>
+                    <p id="datasetSize" class="text-lg font-semibold text-white">--</p>
+                    <p class="text-sm text-slate-400 mt-1">งวดสะสมในระบบ</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Prediction Top -->
+                <div class="text-center p-6 bg-black/30 rounded-3xl border border-slate-800">
+                    <p class="text-green-400 text-sm uppercase mb-2 orbitron">ทำนาย 2 ตัวบน</p>
+                    <div id="topNum" class="orbitron text-8xl font-bold text-white glow-text">--</div>
+                    <div id="topProb" class="text-2xl font-bold text-blue-400 mt-4">0%</div>
+                    <p id="topReason" class="text-slate-400 text-xs mt-6 leading-relaxed italic">รอข้อมูล...</p>
+                </div>
+
+                <!-- Prediction Bottom -->
+                <div class="text-center p-6 bg-black/30 rounded-3xl border border-slate-800">
+                    <p class="text-blue-400 text-sm uppercase mb-2 orbitron">ทำนาย 2 ตัวล่าง</p>
+                    <div id="bottomNum" class="orbitron text-8xl font-bold text-white glow-text">--</div>
+                    <div id="bottomProb" class="text-2xl font-bold text-blue-400 mt-4">0%</div>
+                    <p id="bottomReason" class="text-slate-400 text-xs mt-6 leading-relaxed italic">รอข้อมูล...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-10 text-slate-500 text-xs orbitron">
+            SYSTEM STATUS: ACTIVE | LAST UPDATE: <span id="lastUpdate" class="text-slate-300">--</span>
+        </div>
+    </div>
+
+    <script>
+        async function sync() {
+            const res = await fetch('/api/prediction');
+            const data = await res.json();
+            document.getElementById('inputDate').innerText = data.inputDate;
+            document.getElementById('inputRes').innerText = `บน: ${data.inputTop} | ล่าง: ${data.inputBottom}`;
+            document.getElementById('predDate').innerText = data.predictionDate;
+            document.getElementById('datasetSize').innerText = `บน: ${data.datasetSize.top} | ล่าง: ${data.datasetSize.bottom} งวด`;
+            
+            document.getElementById('topNum').innerText = data.top.number;
+            document.getElementById('topProb').innerText = `ความน่าจะเป็น: ${data.top.probability}`;
+            document.getElementById('topReason').innerText = data.top.analysis;
+            
+            document.getElementById('bottomNum').innerText = data.bottom.number;
+            document.getElementById('bottomProb').innerText = `ความน่าจะเป็น: ${data.bottom.probability}`;
+            document.getElementById('bottomReason').innerText = data.bottom.analysis;
+            document.getElementById('lastUpdate').innerText = data.lastUpdate;
+        }
+
+        async function updateResult() {
+            const top = document.getElementById('topInput').value;
+            const bottom = document.getElementById('bottomInput').value;
+            if(!top || !bottom) return alert("กรุณาใส่ทั้งผลบนและล่าง");
+            
+            const btn = document.querySelector('button');
+            btn.innerText = "กำลังคำนวณ...";
+            btn.disabled = true;
+
+            await fetch('/api/update-result', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ top, bottom })
+            });
+
+            btn.innerText = "วิเคราะห์งวดถัดไป";
+            btn.disabled = false;
+            sync();
+        }
+        setInterval(sync, 5000);
+        sync();
+    </script>
+</body>
+</html>
