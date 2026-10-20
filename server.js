@@ -14,22 +14,27 @@ const HISTORY_FILE = path.join(__dirname, 'history.json');
 
 let masterPrediction = {
     inputDate: "--",
-    inputTop: "--",     // ผลบนวันนี้
-    inputBottom: "--",  // ผลล่างวันนี้
+    inputTop: "--",
+    inputBottom: "--",
     predictionDate: "--",
-    top: { number: "--", probability: "0%", analysis: "รอข้อมูล..." },
-    bottom: { number: "--", probability: "0%", analysis: "รอข้อมูล..." },
+    top: { number: "--", probability: "0%", analysis: "กำลังประมวลผล..." },
+    bottom: { number: "--", probability: "0%", analysis: "กำลังประมวลผล..." },
     methodology: "Dual-Stream Bayesian Convergence",
     lastUpdate: "--",
     datasetSize: { top: 0, bottom: 0 }
 };
 
-// --- [ MEMORY SYSTEM: แยกเก็บ บน-ล่าง ] ---
 function loadHistory() {
-    if (fs.existsSync(HISTORY_FILE)) {
-        return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    try {
+        if (fs.existsSync(HISTORY_FILE)) {
+            const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+            // ตรวจสอบว่า format ถูกต้อง (มี top และ bottom)
+            if (data.top && data.bottom) return data;
+        }
+    } catch (e) {
+        console.error("Error loading history.json:", e);
     }
-    return { top: [], bottom: [] }; // แยกอาเรย์ บน และ ล่าง
+    return { top: [], bottom: [] };
 }
 
 function saveHistory(history) {
@@ -49,10 +54,9 @@ function getNextDrawDate() {
     }
 }
 
-// --- [ CORE ANALYSIS ENGINE: ฟังก์ชันคำนวณกลาง ] ---
 async function calculateBestNumber(historyList, lastResult) {
-    if (historyList.length < 3) {
-        return { number: "??", probability: "Low", analysis: "ข้อมูลไม่เพียงพอ" };
+    if (!historyList || historyList.length < 1) {
+        return { number: "--", probability: "0%", analysis: "ไม่มีข้อมูลสถิติ" };
     }
 
     let bestScore = -1;
@@ -62,17 +66,14 @@ async function calculateBestNumber(historyList, lastResult) {
         let num = i.toString().padStart(2, '0');
         let score = 0;
 
-        // 1. Bayesian Correlation
         for (let j = 0; j < historyList.length - 1; j++) {
             if (historyList[j+1] === lastResult && historyList[j] === num) score += 30;
         }
 
-        // 2. Cycle Deviation (Gap)
         const lastIndex = historyList.lastIndexOf(num);
         const gap = lastIndex === -1 ? historyList.length : (historyList.length - 1) - lastIndex;
         if (gap > 8 && gap < 20) score += 50;
 
-        // 3. Frequency
         const freq = historyList.filter(n => n === num).length;
         score += (freq * 15);
 
@@ -82,17 +83,42 @@ async function calculateBestNumber(historyList, lastResult) {
         }
     }
     const prob = Math.min(99.8, (bestScore / 150 * 100 + 60).toFixed(2));
-    return { number: winner, probability: `${prob}%`, analysis: `วิเคราะห์จากรอบ Cycle ของเลข ${winner} ที่สัมพันธ์กับ ${lastResult}` };
+    return { number: winner, probability: `${prob}%`, analysis: `วิเคราะห์จากรอบ Cycle ของเลข ${winner} ที่สัมพันธ์กับผลล่าสุด ${lastResult}` };
 }
 
-// --- [ API & LOGIC ] ---
+// --- [ ฟังก์ชันวิเคราะห์อัตโนมัติเมื่อเปิดเครื่อง ] ---
+async function bootAnalysis() {
+    console.log("🚀 Booting AI Analysis...");
+    const history = loadHistory();
+    
+    if (history.top.length > 0 && history.bottom.length > 0) {
+        const lastTop = history.top[0];
+        const lastBottom = history.bottom[0];
+        
+        const predTop = await calculateBestNumber(history.top, lastTop);
+        const predBottom = await calculateBestNumber(history.bottom, lastBottom);
+
+        masterPrediction = {
+            inputDate: "ข้อมูลจากประวัติ",
+            inputTop: lastTop,
+            inputBottom: lastBottom,
+            predictionDate: getNextDrawDate(),
+            top: predTop,
+            bottom: predBottom,
+            datasetSize: { top: history.top.length, bottom: history.bottom.length },
+            lastUpdate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })
+        };
+        console.log("✅ Boot analysis complete. Numbers are now live!");
+    } else {
+        console.log("⚠️ History is empty. Waiting for manual input.");
+    }
+}
+
 app.post('/api/update-result', async (req, res) => {
     const { top, bottom } = req.body;
     if (!top || !bottom) return res.status(400).send("กรุณาใส่ทั้งบนและล่าง");
 
     let history = loadHistory();
-    
-    // บันทึกผลลงประวัติ
     if (history.top[0] !== top) history.top.unshift(top);
     if (history.bottom[0] !== bottom) history.bottom.unshift(bottom);
     saveHistory(history);
@@ -110,10 +136,12 @@ app.post('/api/update-result', async (req, res) => {
         datasetSize: { top: history.top.length, bottom: history.bottom.length },
         lastUpdate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })
     };
-
     res.json({ success: true, data: masterPrediction });
 });
 
 app.get('/api/prediction', (req, res) => res.json(masterPrediction));
 
-app.listen(PORT, () => console.log(`Dual-Stream AI Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Dual-Stream AI Server running on port ${PORT}`);
+    bootAnalysis(); // <--- เรียกใช้ฟังก์ชันนี้ทันทีที่เปิด Server
+});
